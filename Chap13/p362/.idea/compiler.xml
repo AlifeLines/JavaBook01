@@ -1,0 +1,17 @@
+rty>
+                    <property name="width">3</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="back">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="image">image7</property>
+                    <accessibility>
+                      <relation type="labelled-by" target="columnft"/>
+                    </accessibility>
+                  </object>
+                  <packing>
+                    <property name="left_attach">1</property>
+                    <pr

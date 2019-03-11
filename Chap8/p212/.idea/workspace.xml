@@ -1,0 +1,231 @@
+ptLevel=2):
+        self.width, self.height = size
+        xtraState = []
+        self._xtraState_push = xtraState.append
+        self._xtraState_pop = xtraState.pop
+        self.comments = 0
+        self.code = []
+        self.code_append = self.code.append
+        self._sep = '\n'
+        self._strokeColor = self._fillColor = self._lineWidth = \
+            self._font = self._fontSize = self._lineCap = \
+            self._lineJoin = self._color = None
+
+        self._fontsUsed =   [] # track them as we go
+        self.setFont(STATE_DEFAULTS['fontName'],STATE_DEFAULTS['fontSize'])
+        self.setStrokeColor(STATE_DEFAULTS['strokeColor'])
+        self.setLineCap(2)
+        self.setLineJoin(0)
+        self.setLineWidth(1)
+        self.PostScriptLevel=PostScriptLevel
+
+    def comment(self,msg):
+        if self.comments: self.code_append('%'+msg)
+
+    def drawImage(self, image, x1,y1, x2=None,y2=None): # Postscript Level2 version
+        # select between postscript level 1 or level 2
+        if self.PostScriptLevel==1:
+            self._drawImageLevel1(image, x1,y1, x2=None,y2=None)
+        elif self.PostScriptLevel==2:
+            self._drawImageLevel2(image, x1,y1, x2=None,y2=None)
+        else :
+            raise ValueError('Unsupported Postscript Level %s' % self.PostScriptLevel)
+
+    def clear(self):
+        self.code_append('showpage') # ugh, this makes no sense oh well.
+
+    def _t1_re_encode(self):
+        if not self._fontsUsed: return
+        # for each font used, reencode the vectors
+        C = []
+        for fontName in self._fontsUsed:
+            fontObj = getFont(fontName)
+            if not fontObj._dynamicFont and fontObj.encName=='WinAnsiEncoding':
+                C.append('WinAnsiEncoding /%s /%s RE' % (fontName, fontName))
+        if C:
+            C.insert(0,PS_WinAnsiEncoding)
+            self.code.insert(1, self._sep.join(C))
+
+    def save(self,f=None):
+        if not hasattr(f,'write'):
+            _f = open(f,'wb')
+        else:
+            _f = f
+        if self.code[-1]!='showpage': self.clear()
+        self.code.insert(0,'''\
+%%!PS-Adobe-3.0 EPSF-3.0
+%%%%BoundingBox: 0 0 %d %d
+%%%% Initialization:
+/m {moveto} bind def
+/l {lineto} bind def
+/c {curveto} bind def
+''' % (self.width,self.height))
+
+        self._t1_re_encode()
+        _f.write(rawBytes(self._sep.join(self.code)))
+        if _f is not f:
+            _f.close()
+            from reportlab.lib.utils import markfilename
+            markfilename(f,creatorcode='XPR3',filetype='EPSF')
+
+    def saveState(self):
+        self._xtraState_push((self._fontCodeLoc,))
+        self.code_append('gsave')
+
+    def restoreState(self):
+        self.code_append('grestore')
+        self._fontCodeLoc, = self._xtraState_pop()
+
+    def stringWidth(self, s, font=None, fontSize=None):
+        """Return the logical width of the string if it were drawn
+        in the current font (defaults to self.font)."""
+        font = font or self._font
+        fontSize = fontSize or self._fontSize
+        return stringWidth(s, font, fontSize)
+
+    def setLineCap(self,v):
+        if self._lineCap!=v:
+            self._lineCap = v
+            self.code_append('%d setlinecap'%v)
+
+    def setLineJoin(self,v):
+        if self._lineJoin!=v:
+            self._lineJoin = v
+            self.code_append('%d setlinejoin'%v)
+
+    def setDash(self, array=[], phase=0):
+        """Two notations.  pass two numbers, or an array and phase"""
+        # copied and modified from reportlab.canvas
+        psoperation = "setdash"
+        if isinstance(array,(float,int)):
+            self.code_append('[%s %s] 0 %s' % (array, phase, psoperation))
+        elif isinstance(array,(tuple,list)):
+            assert phase >= 0, "phase is a length in user space"
+            textarray = ' '.join(map(str, array))
+            self.code_append('[%s] %s %s' % (textarray, phase, psoperation))
+
+    def setStrokeColor(self, color):
+        self._strokeColor = color
+        self.setColor(color)
+
+    def setColor(self, color):
+        if self._color!=color:
+            self._color = color
+            if color:
+                if hasattr(color, "cyan"):
+                    self.code_append('%s setcmykcolor' % fp_str(color.cyan, color.magenta, color.yellow, color.black))
+                else:
+                    self.code_append('%s setrgbcolor' % fp_str(color.red, color.green, color.blue))
+
+    def setFillColor(self, color):
+        self._fillColor = color
+        self.setColor(color)
+
+    def setLineWidth(self, width):
+        if width != self._lineWidth:
+            self._lineWidth = width
+            self.code_append('%s setlinewidth' % width)
+
+    def setFont(self,font,fontSize,leading=None):
+        if self._font!=font or self._fontSize!=fontSize:
+            self._fontCodeLoc = len(self.code)
+            self._font = font
+            self._fontSize = fontSize
+            self.code_append('')
+
+    def line(self, x1, y1, x2, y2):
+        if self._strokeColor != None:
+            self.setColor(self._strokeColor)
+            self.code_append('%s m %s l stroke' % (fp_str(x1, y1), fp_str(x2, y2)))
+
+    def _escape(self, s):
+        '''
+        return a copy of string s with special characters in postscript strings
+        escaped with backslashes.
+        '''
+        try:
+            return _escape_and_limit(s)
+        except:
+            raise ValueError("cannot escape %s" % ascii(s))
+
+    def _issueT1String(self,fontObj,x,y,s):
+        fc = fontObj
+        code_append = self.code_append
+        fontSize = self._fontSize
+        fontsUsed = self._fontsUsed
+        escape = self._escape
+        if not isUnicode(s):
+            try:
+                s = s.decode('utf8')
+            except UnicodeDecodeError as e:
+                i,j = e.args[2:4]
+                raise UnicodeDecodeError(*(e.args[:4]+('%s\n%s-->%s<--%s' % (e.args[4],s[i-10:i],s[i:j],s[j:j+10]),)))
+
+        for f, t in unicode2T1(s,[fontObj]+fontObj.substitutionFonts):
+            if f!=fc:
+                psName = asNative(f.face.name)
+                code_append('(%s) findfont %s scalefont setfont' % (psName,fp_str(fontSize)))
+                if psName not in fontsUsed:
+                    fontsUsed.append(psName)
+                fc = f
+            code_append('%s m (%s) show ' % (fp_str(x,y),escape(t)))
+            x += f.stringWidth(t.decode(f.encName),fontSize)
+        if fontObj!=fc:
+            self._font = None
+            self.setFont(fontObj.face.name,fontSize)
+
+    def drawString(self, x, y, s, angle=0):
+        if self._fillColor != None:
+            fontObj = getFont(self._font)
+            if not self.code[self._fontCodeLoc]:
+                psName = asNative(fontObj.face.name)
+                self.code[self._fontCodeLoc]='(%s) findfont %s scalefont setfont' % (psName,fp_str(self._fontSize))
+                if psName not in self._fontsUsed:
+                    self._fontsUsed.append(psName)
+            self.setColor(self._fillColor)
+            if angle!=0:
+                self.code_append('gsave %s translate %s rotate' % (fp_str(x,y),fp_str(angle)))
+                x = y = 0
+            if fontObj._dynamicFont:
+                s = self._escape(s)
+                self.code_append('%s m (%s) show ' % (fp_str(x,y),s))
+            else:
+                self._issueT1String(fontObj,x,y,s)
+            if angle!=0:
+                self.code_append('grestore')
+
+    def drawCentredString(self, x, y, text, text_anchor='middle'):
+        if self._fillColor is not None:
+            textLen = stringWidth(text, self._font,self._fontSize)
+            if text_anchor=='end':
+                x -= textLen
+            elif text_anchor=='middle':
+                x -= textLen/2.
+            elif text_anchor=='numeric':
+                x -= numericXShift(text_anchor,text,textLen,self._font,self._fontSize)
+            self.drawString(x,y,text)
+
+    def drawRightString(self, text, x, y):
+        self.drawCentredString(text,x,y,text_anchor='end')
+
+    def drawCurve(self, x1, y1, x2, y2, x3, y3, x4, y4, closed=0):
+        codeline = '%s m %s curveto'
+        data = (fp_str(x1, y1), fp_str(x2, y2, x3, y3, x4, y4))
+        if self._fillColor != None:
+            self.setColor(self._fillColor)
+            self.code_append((codeline % data) + ' eofill')
+        if self._strokeColor != None:
+            self.setColor(self._strokeColor)
+            self.code_append((codeline % data)
+                            + ((closed and ' closepath') or '')
+                            + ' stroke')
+
+    ########################################################################################
+
+    def rect(self, x1,y1, x2,y2, stroke=1, fill=1):
+        "Draw a rectangle between x1,y1, and x2,y2"
+        # Path is drawn in counter-clockwise direction"
+
+        x1, x2 = min(x1,x2), max(x1, x2) # from piddle.py
+        y1, y2 = min(y1,y2), max(y1, y2)
+        self.polygon(((x1,y1),(x2,y1),(x2,y2),(x1,y2)), closed=1

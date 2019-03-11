@@ -1,0 +1,20 @@
+const char *__name) __THROW __nonnull ((1)) __wur;
+__END_NAMESPACE_STD
+
+#ifdef __USE_GNU
+/* This function is similar to the above but returns NULL if the
+   programs is running with SUID or SGID enabled.  */
+extern char *secure_getenv (const char *__name)
+     __THROW __nonnull ((1)) __wur;
+#endif
+
+#if defined __USE_MISC || defined __USE_XOPEN
+/* The SVID says this is in <stdio.h>, but this seems a better place.	*/
+/* Put STRING, which is of the form "NAME=VALUE", in the environment.
+   If there is no `=', remove NAME from the environment.  */
+extern int putenv (char *__string) __THROW __nonnull ((1));
+#endif
+
+#ifdef __USE_XOPEN2K
+/* Set NAME to VALUE in the environment.
+   If REPLACE is nonzero, overwrite an existing value.

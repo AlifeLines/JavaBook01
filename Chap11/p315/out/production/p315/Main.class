@@ -1,0 +1,43 @@
+ame="left_attach">2</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="3">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">False</property>
+                    <property name="label">_3</property>
+                    <property name="use_underline">True</property>
+                    <property name="mnemonic_widget">width3:0.00cm</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">3</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="5">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">False</property>
+                    <property name="label">_5</property>
+                    <property name="use_underline">True</property>
+                    <property name="mnemonic_widget">width5:0.00cm</property>
+                  </object>
+                  <packing>
+                    <property name="left_attach">5</property>
+                    <property name="top_attach">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="4">
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">False</property>
+                    <property name="label">_4</property>
+                    <property name="use_underline">True</property>
+                    <property name="mnemonic_widget">width4:0.00cm</property>
+                  </object>
+                  <packing>
+ 

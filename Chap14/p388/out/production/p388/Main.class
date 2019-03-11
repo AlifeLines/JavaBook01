@@ -1,0 +1,48 @@
+'t know what the fields are.
+   Supposedly the field is "path to associated .cb file".  THIS VALUE
+   OVERLAPS WITH N_BSLINE!  */
+__define_stab (N_BROWS, 0x48, "BROWS")
+
+/* GNU Modula-2 definition module dependency.  Value is the modification time
+   of the definition file.  Other is non-zero if it is imported with the
+   GNU M2 keyword %INITIALIZE.  Perhaps N_M2C can be used if there
+   are enough empty fields? */
+__define_stab(N_DEFD, 0x4a, "DEFD")
+
+/* THE FOLLOWING TWO STAB VALUES CONFLICT.  Happily, one is for Modula-2
+   and one is for C++.   Still,... */
+/* GNU C++ exception variable.  Name is variable name.  */
+__define_stab (N_EHDECL, 0x50, "EHDECL")
+/* Modula2 info "for imc":  name,,0,0,0  according to Ultrix V4.0.  */
+__define_stab (N_MOD2, 0x50, "MOD2")
+
+/* GNU C++ `catch' clause.  Value is its address.  Desc is nonzero if
+   this entry is immediately followed by a CAUGHT stab saying what exception
+   was caught.  Multiple CAUGHT stabs means that multiple exceptions
+   can be caught here.  If Desc is 0, it means all exceptions are caught
+   here.  */
+__define_stab (N_CATCH, 0x54, "CATCH")
+
+/* Structure or union element.  Value is offset in the structure.  */
+__define_stab (N_SSYM, 0x60, "SSYM")
+
+/* Name of main source file.
+   Value is starting text address of the compilation.  */
+__define_stab (N_SO, 0x64, "SO")
+
+/* Automatic variable in the stack.  Value is offset from frame pointer.
+   Also used for type descriptions.  */
+__define_stab (N_LSYM, 0x80, "LSYM")
+
+/* Beginning of an include file.  Only Sun uses this.
+   In an object file, only the name is significant.
+   The Sun linker puts data into some of the other fields.  */
+__define_stab (N_BINCL, 0x82, "BINCL")
+
+/* Name of sub-source file (#include file).
+   Value is starting text address of the compilation.  */
+__define_stab (N_SOL, 0x84, "SOL")
+
+/* Parameter variable.  Value is offset from argument pointer.
+   (On most machines the argument pointer is the same as the frame pointer.  */
+__define_stab (N_PS
